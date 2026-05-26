@@ -4,6 +4,7 @@ Ollama 없이도 실행 가능한 mock 테스트 포함
 """
 
 import sys, os
+import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -21,7 +22,7 @@ from agents.dependency_validator import (
 class TestCollector(unittest.TestCase):
 
     def test_sample_file_creation(self):
-        result = create_sample_file("/tmp/test_vuln.py")
+        result = create_sample_file(os.path.join(tempfile.gettempdir(), "test_vuln.py"))
         self.assertEqual(len(result.files), 1)
         self.assertIn("sqlite3", result.files[0].content)
 
