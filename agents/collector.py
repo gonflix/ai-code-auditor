@@ -105,6 +105,9 @@ def collect_from_local(
     repo = git.Repo(repo_path)
     diff = repo.git.diff(f"{base_branch}...HEAD", "--name-only")
     changed_files = [f for f in diff.splitlines() if f]
+    print(
+        f"로컬 Git diff에서 {base_branch} branch {len(changed_files)}개 변경 파일 발견"
+    )
 
     files = []
     for path in changed_files:
