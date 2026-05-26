@@ -1,0 +1,50 @@
+# .github/workflows/security-audit.yml
+# PR이 생성/업데이트될 때마다 자동으로 보안 감사 실행
+
+name: AI Security Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "**.py"
+      - "**.js"
+      - "**.ts"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # PR 코멘트 등록용
+      issues: write          # Critical 이슈 생성용
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # 전체 히스토리 필요 (diff 계산)
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 로컬 Ollama 대신 Claude API 사용 (CI 환경) ──
+      - name: Run security audit
+        env:
+          LLM_BACKEND:    claude
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL:   claude-haiku-4-5-20251001    # 저렴한 모델
+          GITHUB_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
+          REPORT_MODE:    pr_comment
+          MIN_CONFIDENCE: "0.7"
+        run: |
+          python main.py \
+            --mode pr \
+            --repo ${{ github.repository }} \
+            --pr   ${{ github.event.pull_request.number }}
+
+      # Critical 취약점 발견 시 exit code 1 → 워크플로우 실패
+      # PR 머지 보호 규칙과 연동 가능

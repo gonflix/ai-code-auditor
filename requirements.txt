@@ -1,0 +1,8 @@
+openai>=1.0.0          # Ollama 호환 클라이언트 (로컬) + Claude API 전환 시 anthropic으로 교체
+anthropic>=0.25.0      # Claude API 전환 시 사용
+requests>=2.31.0       # PyPI / npm / OSV API 호출
+gitpython>=3.1.40      # 로컬 Git diff 파싱
+PyGithub>=2.1.0        # GitHub API (MCP 없이 직접 호출)
+python-dotenv>=1.0.0   # 환경변수 관리
+rich>=13.0.0           # 터미널 출력 포맷팅
+pydantic>=2.0.0        # 데이터 모델 검증
