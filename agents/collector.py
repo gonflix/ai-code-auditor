@@ -3,7 +3,6 @@ agents/collector.py — 1단계: 코드 수집
 GitHub PR diff 또는 로컬 Git diff에서 변경 파일을 추출합니다.
 """
 
-from __future__ import annotations
 import os
 import tempfile
 
@@ -94,7 +93,7 @@ def collect_from_pr(repo_name: str, pr_number: int) -> CollectionResult:
 
 
 def collect_from_local(
-    repo_path: str = ".", base_branch: str = "main"
+    local_repo_path: str = ".", base_branch: str = "main"
 ) -> CollectionResult:
     """
     로컬 git diff HEAD...<base_branch> 를 파싱.
@@ -102,7 +101,7 @@ def collect_from_local(
     """
     import git
 
-    repo = git.Repo(repo_path)
+    repo = git.Repo(local_repo_path)
     diff = repo.git.diff(f"{base_branch}...HEAD", "--name-only")
     changed_files = [f for f in diff.splitlines() if f]
     print(
@@ -114,7 +113,7 @@ def collect_from_local(
         ext = os.path.splitext(path)[1].lower()
         if ext not in SUPPORTED_EXTENSIONS:
             continue
-        full_path = os.path.join(repo_path, path)
+        full_path = os.path.join(local_repo_path, path)
         if not os.path.exists(full_path):
             continue
         with open(full_path, encoding="utf-8", errors="replace") as f:
@@ -123,7 +122,7 @@ def collect_from_local(
         files.append(ChangedFile(path=path, content=content, patch=patch))
 
     return CollectionResult(
-        repo=repo_path,
+        repo=local_repo_path,
         pr_number=None,
         commit_sha=repo.head.commit.hexsha,
         files=files,

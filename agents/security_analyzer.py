@@ -4,7 +4,6 @@ OWASP Top 10 기준으로 취약점을 탐지합니다.
 Ollama(로컬) 또는 Claude API를 투명하게 사용합니다.
 """
 
-from __future__ import annotations
 import json
 from models import Vulnerability, Severity, OwaspCategory
 from llm_client import chat_json

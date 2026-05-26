@@ -13,7 +13,6 @@ main.py — 파이프라인 오케스트레이터
   python main.py --mode pr --repo owner/repo --pr 42
 """
 
-from __future__ import annotations
 import argparse
 import sys
 import os
@@ -27,7 +26,7 @@ console = Console()
 
 def run_pipeline(
     mode: str,
-    repo_path: str = ".",
+    local_repo_path: str = ".",
     repo_name: str = "",
     pr_number: int | None = None,
     base_branch: str = "main",
@@ -58,7 +57,7 @@ def run_pipeline(
             collection = create_sample_file()
             console.print("[yellow]샘플 취약 파일로 테스트합니다[/yellow]")
         elif mode == "local":
-            collection = collect_from_local(repo_path, base_branch)
+            collection = collect_from_local(local_repo_path, base_branch)
         elif mode == "pr":
             collection = collect_from_pr(repo_name, pr_number)
         else:
@@ -150,7 +149,7 @@ def run_pipeline(
 def main():
     parser = argparse.ArgumentParser(description="AI 생성 코드 보안 감사 에이전트")
     parser.add_argument("--mode", choices=["sample", "local", "pr"], default="sample")
-    parser.add_argument("--repo-path", default=".", help="로컬 Git 저장소 경로")
+    parser.add_argument("--local-repo-path", default=".", help="로컬 Git 저장소 경로")
     parser.add_argument("--base-branch", default="main")
     parser.add_argument("--repo", default="", help="GitHub 저장소 (owner/repo)")
     parser.add_argument("--pr", type=int, help="PR 번호")
@@ -159,7 +158,7 @@ def main():
     console.print("\n[bold blue]🛡️  AI 코드 보안 감사 에이전트[/bold blue]\n")
     run_pipeline(
         mode=args.mode,
-        repo_path=args.repo_path,
+        local_repo_path=args.local_repo_path,
         repo_name=args.repo,
         pr_number=args.pr,
         base_branch=args.base_branch,

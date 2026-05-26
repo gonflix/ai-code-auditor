@@ -3,7 +3,6 @@ llm_client.py — Ollama(로컬) / Claude API 전환 래퍼
 환경변수 LLM_BACKEND 값 하나로 전환됩니다.
 """
 
-from __future__ import annotations
 import os
 import json
 from dotenv import load_dotenv
