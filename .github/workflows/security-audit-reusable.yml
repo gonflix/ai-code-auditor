@@ -1,0 +1,71 @@
+# .github/workflows/security-audit-reusable.yml
+# 다른 저장소가 uses: 로 호출하는 재사용 가능 워크플로우
+# 호출하는 저장소의 PR을 분석하고 Critical 발견 시 워크플로우를 실패 처리합니다
+
+name: AI Security Audit (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python 버전'
+        required: false
+        default: '3.11'
+        type: string
+      min-confidence:
+        description: '취약점 필터링 최소 신뢰도 (0.0~1.0)'
+        required: false
+        default: '0.7'
+        type: string
+      report-mode:
+        description: '리포트 방식: terminal | pr_comment | github_issue | both'
+        required: false
+        default: 'pr_comment'
+        type: string
+    secrets:
+      ANTHROPIC_API_KEY:
+        description: 'Claude API 키 (LLM 보안 분석용)'
+        required: true
+
+jobs:
+  security-audit:
+    name: AI Code Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # PR 코멘트 등록
+      issues: write          # Critical 이슈 자동 생성
+
+    steps:
+      - name: Checkout ai-code-auditor
+        uses: actions/checkout@v4
+        with:
+          repository: gonflix/ai-code-auditor
+          path: .ai-auditor
+
+      - name: Setup Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: .ai-auditor/requirements.txt
+
+      - name: Install auditor dependencies
+        run: pip install -r .ai-auditor/requirements.txt
+
+      - name: Run AI Security Audit
+        env:
+          LLM_BACKEND: claude
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: claude-haiku-4-5-20251001
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_MODE: ${{ inputs.report-mode }}
+          MIN_CONFIDENCE: ${{ inputs.min-confidence }}
+        run: |
+          cd .ai-auditor
+          python main.py \
+            --mode pr \
+            --repo ${{ github.repository }} \
+            --pr ${{ github.event.pull_request.number }}
+
+      # exit code 1 (Critical 발견) → 워크플로우 실패 → 브랜치 보호 규칙이 머지 차단

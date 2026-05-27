@@ -30,7 +30,7 @@ PR/커밋 트리거
 ```bash
 git clone <this-repo> && cd ai-code-auditor
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.default .env
 ```
 
 ### 2. Ollama 로컬 모델 설치 (무료 테스트)
@@ -63,7 +63,7 @@ LLM_BACKEND=claude
 ANTHROPIC_API_KEY=your_key_here
 ```
 
-## 탐지 항목 (OWASP Top 10 2025)
+## 탐지 항목 ([OWASP Top 10 2025](https://owasp.org/Top10/2025/))
 
 | 카테고리 | 예시 |
 |---------|------|
@@ -84,7 +84,82 @@ ANTHROPIC_API_KEY=your_key_here
 python -m pytest tests/ -v
 ```
 
-## CI/CD 통합
+## CI/CD 통합 — 이 저장소 자체 감사
 
 `.github/workflows/security-audit.yml` 참고.
 PR마다 자동 실행되며 Critical 발견 시 빌드를 실패 처리합니다.
+
+## 다른 프로젝트에 연동하기
+
+ai-code-auditor를 **다른 저장소의 PR 머지 조건**으로 사용할 수 있습니다.
+
+### 전제 조건
+
+- 이 저장소(`ai-code-auditor`)가 **Public** 이어야 합니다 (reusable workflow 참조를 위해)
+- 대상 저장소에 `ANTHROPIC_API_KEY` 시크릿 등록 필요
+
+### 1단계 — 워크플로우 파일 추가
+
+[`docs/consumer-workflow.yml`](docs/consumer-workflow.yml)을 복사해서 대상 저장소의 `.github/workflows/security-audit.yml` 로 저장합니다.
+
+```yaml
+# 대상 저장소의 .github/workflows/security-audit.yml
+name: Security Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**.py"
+      - "**.js"
+      - "**.ts"
+      - "**.java"
+      - "**.go"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  security-audit:
+    name: AI Code Security Audit
+    uses: gonflix/ai-code-auditor/.github/workflows/security-audit-reusable.yml@main
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+### 2단계 — API 키 등록
+
+대상 저장소 → **Settings > Secrets and variables > Actions** → `ANTHROPIC_API_KEY` 추가
+
+### 3단계 — 브랜치 보호 규칙으로 머지 차단
+
+대상 저장소 → **Settings > Branches > Add branch protection rule**:
+
+| 항목 | 설정 |
+|------|------|
+| Branch name pattern | `main` (또는 `master`) |
+| Require status checks to pass before merging | ✅ |
+| Status check 이름 | `AI Code Security Audit` |
+| Require branches to be up to date before merging | ✅ (권장) |
+
+> **작동 원리**: PR에서 Critical 취약점이 발견되면 `main.py`가 `exit(1)`로 종료 → 워크플로우 실패 → GitHub가 머지 버튼을 비활성화합니다.
+
+### 동작 흐름
+
+```
+PR 오픈/업데이트
+       │
+       ▼
+  consumer repo의 GitHub Actions 트리거
+       │
+       ▼
+  ai-code-auditor 체크아웃 + 보안 감사 실행
+  (PR diff를 GitHub API로 가져와 분석)
+       │
+       ├─ Critical 없음 → ✅ Status Check 통과 → 머지 가능
+       │
+       └─ Critical 발견 → ❌ Status Check 실패 → 머지 차단
+                              + PR에 취약점 코멘트 자동 등록
+```

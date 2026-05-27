@@ -1,0 +1,39 @@
+# ================================================================
+# AI 코드 보안 감사 — 다른 프로젝트에서 연동하는 방법
+#
+# 1. 이 파일을 복사 → 대상 프로젝트의 .github/workflows/security-audit.yml 저장
+# 2. 대상 저장소 Settings > Secrets > Actions 에서 ANTHROPIC_API_KEY 추가
+# 3. 대상 저장소 Settings > Branches > 브랜치 보호 규칙 편집:
+#      ✅ Require status checks to pass before merging
+#      ✅ 상태 체크 이름: "AI Code Security Audit" 추가
+#
+# 사전 요구사항: ai-code-auditor 저장소가 Public 이어야 합니다
+# ================================================================
+name: Security Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:                   # 분석 대상 확장자 — 프로젝트에 맞게 수정
+      - "**.py"
+      - "**.js"
+      - "**.ts"
+      - "**.java"
+      - "**.go"
+
+permissions:
+  contents: read
+  pull-requests: write       # PR 인라인 코멘트 등록
+  issues: write              # Critical 이슈 자동 생성
+
+jobs:
+  security-audit:
+    name: AI Code Security Audit   # 브랜치 보호 규칙에서 이 이름으로 Status Check 검색
+    uses: gonflix/ai-code-auditor/.github/workflows/security-audit-reusable.yml@main
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    # 아래 with 블록으로 동작을 커스터마이즈할 수 있습니다 (선택)
+    # with:
+    #   min-confidence: '0.8'    # 더 엄격한 필터링 (기본: 0.7)
+    #   report-mode: 'both'      # PR 코멘트 + GitHub 이슈 동시 생성 (기본: pr_comment)
+    #   python-version: '3.12'   # Python 버전 (기본: 3.11)
