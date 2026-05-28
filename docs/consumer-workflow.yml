@@ -12,14 +12,8 @@
 name: Security Audit
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
-    paths:                   # 분석 대상 확장자 — 프로젝트에 맞게 수정
-      - "**.py"
-      - "**.js"
-      - "**.ts"
-      - "**.java"
-      - "**.go"
 
 permissions:
   contents: read

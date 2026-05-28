@@ -18,7 +18,7 @@ PR/커밋 트리거
 3. LLM 보안 분석 ← OWASP Top 10 2025 체크리스트 프롬프트 (Ollama or Claude)
      │
      ▼
-4. 자기 수정 루프 ← 오탐 필터링 / 경계값 재검토 (핵심 차별화)
+4. 자기 수정 루프 ← 오탐 필터링 / 경계값 재검토
      │
      ▼
 5. 리포트 생성   ← GitHub PR 코멘트 / Issue / 터미널 출력
@@ -57,7 +57,7 @@ python main.py --mode pr --repo owner/repo --pr 42
 ```
 
 ### 4. Claude API로 전환 (데모/프로덕션)
-`.env` 파일에서 한 줄만 수정:
+`.env` 파일에서 두 줄만 수정:
 ```
 LLM_BACKEND=claude
 ANTHROPIC_API_KEY=your_key_here
@@ -84,11 +84,6 @@ ANTHROPIC_API_KEY=your_key_here
 python -m pytest tests/ -v
 ```
 
-## CI/CD 통합 — 이 저장소 자체 감사
-
-`.github/workflows/security-audit.yml` 참고.
-PR마다 자동 실행되며 Critical 발견 시 빌드를 실패 처리합니다.
-
 ## 다른 프로젝트에 연동하기
 
 ai-code-auditor를 **다른 저장소의 PR 머지 조건**으로 사용할 수 있습니다.
@@ -101,33 +96,6 @@ ai-code-auditor를 **다른 저장소의 PR 머지 조건**으로 사용할 수 
 ### 1단계 — 워크플로우 파일 추가
 
 [`docs/consumer-workflow.yml`](docs/consumer-workflow.yml)을 복사해서 대상 저장소의 `.github/workflows/security-audit.yml` 로 저장합니다.
-
-```yaml
-# 대상 저장소의 .github/workflows/security-audit.yml
-name: Security Audit
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "**.py"
-      - "**.js"
-      - "**.ts"
-      - "**.java"
-      - "**.go"
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
-jobs:
-  security-audit:
-    name: AI Code Security Audit
-    uses: gonflix/ai-code-auditor/.github/workflows/security-audit-reusable.yml@main
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-```
 
 ### 2단계 — API 키 등록
 
